@@ -8,6 +8,11 @@
     
     
   ],
+    "permission":{
+    "scope.userLocation":{
+      "desc": "获取你的位置，为你更好的服务"
+    }
+  },
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#ff2d4a",
