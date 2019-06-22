@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div v-if="goodsDetail">
         <!-- 轮播图 -->
         <swiper indicator-dots autoplay circular>
             <block v-for="(item,index) in goodsDetail.pics" :key="index">
@@ -27,23 +27,20 @@
             </div>
         </div>
         <!-- 3.0 促销信息 -->
-    <view class="part">
-      <view class="part-item part-line">
-        <text class="note">促销</text>
-        <text class="color-main description">满300减30元</text>
-      </view>
-      <view class="part-item">
-        <text class="note">已选</text>
-        <text class="description">黑色/S/1件</text>
-      </view>
-    </view>
-    <!-- 4.0 收获地址 -->
-    <view
-      class="part"
-      @click="chooseAddress"
-    >
-      <view class="part-item">
-        <text class="note">送至</text>
+        <view class="part">
+          <view class="part-item part-line">
+          <text class="note">促销</text>
+          <text class="color-main description">满300减30元</text>
+        </view>
+        <view class="part-item">
+          <text class="note">已选</text>
+          <text class="description">黑色/S/1件</text>
+        </view>
+        </view>
+        <!-- 4.0 收获地址 -->
+        <view class="part"  @click="chooseAddress">
+          <view class="part-item">
+          <text class="note">送至</text>
         <view v-if="address">
             {{address.provinceName}} {{address.cityName}} {{address.countyName}}
         </view>
@@ -55,7 +52,44 @@
           class="iconfont icon-jiantouyou"
         ></view>
       </view>
-    </view>
+        </view>
+        <!-- 图文介绍和规则参数 -->
+        <view class="tabs">
+          <view class="tabs-head">
+            <view @click="taggleSelect(index)" :class="['tabs-item',tabIndex==index?'active':'']"  v-for="(item,index) in tabs" :key="index">
+              <text>{{item}}</text>
+            </view>
+          </view>
+          <view class="tabs-body">
+            <!-- 图文介绍 -->
+            <view v-show="tabIndex ==0">
+              <view v-html="goodsDetail.goods_introduce"></view>
+            </view>
+            <!-- 规格参数 -->
+            <view v-show="tabIndex ==1">
+              <view v-for="(item,index) in goodsDetail.attrs" :key="item.attr_id" class="param-item">
+                <text :class="['note',index ===goodsDetail.attrs.length-1?'param-item-last':'']">{{item.attr_name}}</text>
+                <text :class="['description',index === goodsDetail.attrs.length-1?'param-item-last':'']">{{item.attr_vals}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        <!-- 底部导航栏 -->
+        <view class="fixed-bar">
+          <view class="item">
+        <button class="contact-btn" open-type="contact"></button>
+        <view class="iconfont icon-kefu"></view>
+        <text class="note">联系客服</text>
+      </view>
+      <view @click="goToShopCart" class="item">
+        <view class="iconfont icon-gouwuche"></view>
+        <text class="note">购物车</text>
+      </view>
+      <view class="btn-group">
+        <view @click="addToShopCart" class="btn yellow-btn">加入购物车</view>
+        <view class="btn red-btn">立即购买</view>
+      </view>
+        </view>
     </div>
 </template>
 
@@ -64,7 +98,9 @@ export default {
     data() {
         return {
             goodsDetail:null,
-            address:null
+            address:null,
+            tabs:['图文介绍','规格参数'],
+            tabIndex:0
         }
     },
     onLoad(option){
@@ -73,6 +109,9 @@ export default {
         if(wx.setStorageSync('address')) {
             this.address = wx.setStorageSync('address')
         }
+    },
+    onReady(){
+
     },
     methods: {
         //获取商品详情数据
@@ -115,6 +154,14 @@ export default {
                      
                  }
            });
+      },
+      //切换tab栏
+      taggleSelect(index) {
+        this.tabIndex = index
+      },
+      //跳转到购物车
+      goToShopCart(){
+        wx.switchTab({ url: '/pages/shopcar/main' });
       }
 
     },

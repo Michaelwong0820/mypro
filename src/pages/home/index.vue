@@ -32,8 +32,8 @@
           </div>
           <!-- 右边 -->
           <div class="floor-body-right">
-            <div v-if="index2>0" v-for="(item2,index2) in item.product_list" :style="{width:item2.image_width + 'rpx'}"  :key="index2" class="floor-body-right-img" >
-                  <image style="width:100%;height:100%" :src="item2.image_src" ></image>
+            <div v-if="index2>0"  v-for="(item2,index2) in item.product_list" :style="{width:item2.image_width + 'rpx'}"  :key="index2" class="floor-body-right-img" >
+                  <image  style="width:100%;height:100%" :src="item2.image_src" ></image>
             </div>
             
           </div>
