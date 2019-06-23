@@ -94,6 +94,7 @@
 </template>
 
 <script>
+import {addGoods} from '../common/shopcarStoryge.js'
 export default {
     data() {
         return {
@@ -162,6 +163,21 @@ export default {
       //跳转到购物车
       goToShopCart(){
         wx.switchTab({ url: '/pages/shopcar/main' });
+      },
+      //添加到购物车
+      addToShopCart(){
+        wx.showToast({
+          title: '添加成功', //提示的内容,
+          icon: 'none', //图标,
+          image:'/static/img/duigou.png',
+          duration: 1000, //延迟时间,
+          mask: true, //显示透明蒙层，防止触摸穿透,
+          success: res => {}
+        });
+        addGoods({
+          goods_id:this.goodsDetail.goods_id,
+          goods_number:1
+        })
       }
 
     },
