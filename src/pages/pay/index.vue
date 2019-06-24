@@ -1,9 +1,9 @@
 <template>
-    <div>
-          <!-- 1.收获地址选择 -->
+  <div>
+    <!-- 1.收获地址选择 -->
     <view @click="chooseAddress" class="address">
       <view v-if="address" class="address-info">
-         <view class="address-info-name-phone">
+        <view class="address-info-name-phone">
           <view>
             <text style="font-size:12px;">收货人：{{address.userName}}</text>
           </view>
@@ -17,26 +17,21 @@
         </view>
       </view>
       <view v-else class="address-add">
-          <text style="font-size:12px;">+ 新增地址</text>
+        <text style="font-size:12px;">+ 新增地址</text>
       </view>
       <view class="address-pic">
-        <image src="/static/img/cart_border@2x.png" />
+        <image src="/static/img/cart_border@2x.png"/>
       </view>
     </view>
-     <!-- 2.0 购买的商品列表 -->
+    <!-- 2.0 购买的商品列表 -->
     <view class="order-list">
-      <block
-        v-for="item in goodsList"
-        :key="item.goods_id"
-      >
+      <block v-for="item in goodsList" :key="item.goods_id">
         <view class="product-item">
           <navigator class="product-left">
-            <image :src="item.goods_small_logo" />
+            <image :src="item.goods_small_logo"/>
           </navigator>
           <view class="product-right">
-            <navigator class="product-name">
-              {{item.goods_name}}
-            </navigator>
+            <navigator class="product-name">{{item.goods_name}}</navigator>
             <view class="product-right-price">
               <text class="product-right-price-symbol">￥</text>
               <text class="product-right-price-integer">{{item.goods_price}}</text>
@@ -64,37 +59,125 @@
         <button @getuserinfo="wxLogin" open-type="getUserInfo" class="wxLogin">登录后下单支付</button>
       </block>
     </view>
-    </div>
+  </div>
 </template>
 
 <script>
-import {getLocalStoryge} from '../common/shopcarStoryge.js'
-import chooseAddress from '../mixins/chooseAddress.js'
+import { getLocalStoryge } from "../common/shopcarStoryge.js";
+import chooseAddress from "../mixins/chooseAddress.js";
 export default {
-    mixins:[chooseAddress],
-    data() {
-        return {
-            goodsList:[]
+  mixins: [chooseAddress],
+  data() {
+    return {
+      goodsList: [],
+      token: null,
+      totalAmount: 0,
+    };
+  },
+  onLoad(option) {
+    const ids = option.ids;
+    this.getGoodsList(ids);
+    if(wx.getStorageSync('token')) {
+      this.token = wx.getStorageSync('token')
+    }
+     if(wx.getStorageSync('address')) {
+      this.address = wx.getStorageSync('address')
+    }
+    wx.login({
+      success: res => {},
+      fail: () => {},
+      complete: () => {}
+    });
+  },
+  methods: {
+    async getGoodsList(ids) {
+      //从本地获取
+      const localStoryge = getLocalStoryge();
+
+      let res = await this.$https.get(`goods/goodslist?goods_ids=${ids}`);
+      res.data.message.forEach(item => {
+        item.goods_number = localStoryge[item.goods_id];
+        this.totalAmount += item.goods_number * item.goods_price;
+      });
+      this.goodsList = res.data.message;
+    },
+    //微信登录
+    wxLogin(e) {
+      if (e.mp.detail.errMsg == "getUserInfo:fail auth deny") {
+        return;
+      }
+      // 判断用户登录信息是否有效
+      // const res2 = await new Promise ((resolve,reject)=>{
+      //   wx.checkSession({
+      //     success: res => {
+      //       resolve(res)
+      //     },
+      //     fail: err => {
+      //       reject(err)
+      //     },
+      //   });
+      // })
+      // let res = await new Promise((resolve, reject) => {
+      //   wx.login({
+      //     success: res => {
+      //       resolve(res);
+      //     },
+      //     fail: err => {
+      //       reject(err);
+      //     },
+      //     complete: () => {}
+      //   });
+      // });
+      wx.login({
+        success: async res => {
+          let code = res.code;
+          let { encryptedData, iv, rawData, signature } = e.mp.detail;
+          const res1 = await this.$https.post("users/wxlogin", {
+            code,
+            encryptedData,
+            iv,
+            rawData,
+            signature
+          });
+          // console.log(res1);
+
+          if (res1.statusCode == 200) {
+            this.token = res1.data.message.token;
+            // console.log(this.token);
+            wx.setStorageSync('token',res1.data.message.token)
+
+          }
         }
+      });
     },
-    onLoad (option) {
-        const ids = option.ids
-        this.getGoodsList(ids)
-    },
-    methods: {
-       async getGoodsList(ids) {
-           //从本地获取
-           const localStoryge = getLocalStoryge()
-           
-           let res= await this.$https.get(`goods/goodslist?goods_ids=${ids}`)       
-           res.data.message.forEach(item=>{
-               item.goods_number = localStoryge[item.goods_id]
-           })
-           this.goodsList = res.data.message
-        },
-        
-    },
-}
+    //微信支付
+    async goToOrder () {
+      if (!this.address) {
+        wx.showToast({
+          title: '请输入收获地址', //提示的内容,
+          icon: 'none', //图标,
+          duration: 2000, //延迟时间,
+          mask: true, //显示透明蒙层，防止触摸穿透,
+        });
+        return
+      }
+      const order = {
+        order_price:this.totalAmount,
+        consignee_addr:`${this.address.detailAddress}${this.address.username}${this.address.telNumber}`,
+        goods:this.goodsList.map(item=>{
+          return {
+            goods_id:item.goods_id,
+            goods_number:item.goods_number,
+            goods_price:item.goods_price,
+          }
+        })
+      }
+      const res = await this.$https.post(`my/orders/create`,order)
+      console.log(res);
+      
+    }
+  }
+};
 </script>
 
 <style scoped lang="less">
@@ -142,7 +225,7 @@ export default {
   }
 }
 .iconfont-tap {
-  font-family: 'iconfont' !important;
+  font-family: "iconfont" !important;
   font-size: 32rpx;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -172,7 +255,7 @@ export default {
   padding: 30rpx 20rpx;
   position: relative;
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     left: 20rpx;
     right: 0;
