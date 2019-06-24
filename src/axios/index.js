@@ -2,7 +2,7 @@ import Vue from 'vue'
 import axios from 'axios'
 
 //设置统一路径
-axios.defaults.baseURL = 'https://www.zhengzhicheng.cn/api/public/v1/'
+axios.defaults.baseURL ='http://127.0.0.1:8899/api/public/v1/'
 //使用适配器
 axios.defaults.adapter = function (config) {
   return new Promise((resolve, reject) => {
